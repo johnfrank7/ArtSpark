@@ -1,31 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { Slot, useRouter, useSegments } from "expo-router";
-import { getUser } from "../utils/storage";
+import { Slot, useRouter } from "expo-router";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../utils/firebaseConfig";
+import { View, ActivityIndicator } from "react-native";
 
 export default function Layout() {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const router = useRouter();
-  const segments = useSegments();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const loggedUser = await getUser();
-      setUser(loggedUser);
-      setLoading(false);
-
-      // Only redirect if user is not logged in AND they're trying to access protected routes
-      if (!loggedUser) {
-        if (segments[0] === "goals") {
-          router.replace("/login");
-        }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
       }
-    };
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
-    checkAuth();
-  }, [segments]);
-
-  if (loading) return null; // could show spinner here
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return <Slot />;
 }

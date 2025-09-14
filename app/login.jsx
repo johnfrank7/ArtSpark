@@ -1,56 +1,50 @@
-import { useState } from "react";
-import { View, Text, TextInput, Button, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, TextInput, Button, Text, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { app } from "../utils/firebaseConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Login() {
   const router = useRouter();
+  const auth = getAuth(app);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Please enter email and password");
-      return;
-    }
-
     try {
-      
-      const userData = { email, token: "fake-jwt-token" };
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-    
-      await AsyncStorage.setItem("user", JSON.stringify(userData));
+      // Save user to local storage for session
+      await AsyncStorage.setItem("user", JSON.stringify({ email: user.email }));
 
-     
-      router.replace("/");
+      Alert.alert("Success", "Logged in!");
+      router.replace("/"); // go to home
     } catch (error) {
-      Alert.alert("Login Failed", error.message);
+      Alert.alert("Error", error.message);
     }
   };
 
   return (
-    <View className="flex-1 items-center justify-center px-4">
-      <Text className="text-2xl font-bold mb-4">Login</Text>
-
+    <View style={{ flex: 1, justifyContent: "center", padding: 20 }}>
+      <Text>Email</Text>
       <TextInput
-        placeholder="Email"
+        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
         value={email}
         onChangeText={setEmail}
-        className="w-full border p-2 mb-2 rounded"
+        autoCapitalize="none"
       />
-
+      <Text>Password</Text>
       <TextInput
-        placeholder="Password"
-        secureTextEntry
+        style={{ borderWidth: 1, padding: 10, marginBottom: 20 }}
         value={password}
         onChangeText={setPassword}
-        className="w-full border p-2 mb-4 rounded"
+        secureTextEntry
       />
-
+      
       <Button title="Login" onPress={handleLogin} />
-      <View className="mt-4">
-        <Button title="Go to Sign Up" onPress={() => router.push("/signup")} />
-      </View>
     </View>
   );
 }

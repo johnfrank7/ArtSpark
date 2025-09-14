@@ -1,46 +1,45 @@
-import React, { useEffect, useState } from "react";
-import { View, TextInput, Button } from "react-native";
-import { getPhotos, updatePhoto } from "../../utils/photos";
-import { useRouter, useSearchParams } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
+import { useRouter, useSearchParams } from 'expo-router';
+import * as photos from '../../utils/photos';
 
 export default function EditPhoto() {
   const { id } = useSearchParams();
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
   const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
 
   useEffect(() => {
-    const loadPhoto = async () => {
-      const photos = await getPhotos();
-      const photo = photos.find((p) => p.id === id);
-      if (photo) {
-        setTitle(photo.title);
-        setUrl(photo.url);
+    (async () => {
+      const list = await photos.getPhotos();
+      const p = list.find(x => x.id === id);
+      if (!p) {
+        alert('Photo not found');
+        router.back();
+        return;
       }
-    };
-    loadPhoto();
+      setTitle(p.title);
+      setUrl(p.url);
+    })();
   }, [id]);
 
   const handleUpdate = async () => {
-    await updatePhoto(id, { title, url });
+    await photos.updatePhoto(id, { title, url });
     router.back();
   };
 
   return (
-    <View style={{ padding: 20 }}>
-      <TextInput
-        placeholder="Photo Title"
-        value={title}
-        onChangeText={setTitle}
-        style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-      />
-      <TextInput
-        placeholder="Photo URL"
-        value={url}
-        onChangeText={setUrl}
-        style={{ borderWidth: 1, marginBottom: 10, padding: 8 }}
-      />
+    <View style={styles.container}>
+      <Text style={styles.label}>Edit Photo</Text>
+      <TextInput value={title} onChangeText={setTitle} style={styles.input} />
+      <TextInput value={url} onChangeText={setUrl} style={styles.input} />
       <Button title="Update" onPress={handleUpdate} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex:1, padding:16, backgroundColor:'#fff' },
+  label: { fontSize:18, fontWeight:'600', marginBottom:12 },
+  input: { borderWidth:1, borderColor:'#ddd', padding:10, borderRadius:6, marginBottom:12 }
+});
