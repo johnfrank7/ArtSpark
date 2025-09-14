@@ -1,14 +1,7 @@
-import { Stack } from "expo-router"
-import { StatusBar } from "expo-status-bar"
+import React from "react";
+import { Slot } from "expo-router";
 
-export default function RootLayout() {
-  return (
-    <>
-      <StatusBar style="auto" />
-      <Stack>
-        <Stack.Screen name="goals" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </>
-  )
+export default function Layout() {
+  
+  return <Slot />;
 }
