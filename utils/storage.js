@@ -1,28 +1,29 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const saveUser = async (user) => {
-  let users = JSON.parse(await AsyncStorage.getItem("USERS")) || [];
-  users.push(user);
-  await AsyncStorage.setItem("USERS", JSON.stringify(users));
-};
+const USER_KEY = "user";
 
+export async function saveUser(user) {
+  try {
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch (e) {
+    console.error("Error saving user", e);
+  }
+}
 
-export const findUser = async (username, password) => {
-  let users = JSON.parse(await AsyncStorage.getItem("USERS")) || [];
-  return users.find((u) => u.username === username && u.password === password);
-};
+export async function getUser() {
+  try {
+    const json = await AsyncStorage.getItem(USER_KEY);
+    return json ? JSON.parse(json) : null;
+  } catch (e) {
+    console.error("Error getting user", e);
+    return null;
+  }
+}
 
-
-export const setCurrentUser = async (user) => {
-  await AsyncStorage.setItem("CURRENT_USER", JSON.stringify(user));
-};
-
-
-export const getCurrentUser = async () => {
-  const user = await AsyncStorage.getItem("CURRENT_USER");
-  return user ? JSON.parse(user) : null;
-};
-
-export const logout = async () => {
-  await AsyncStorage.removeItem("CURRENT_USER");
-};
+export async function removeUser() {
+  try {
+    await AsyncStorage.removeItem(USER_KEY);
+  } catch (e) {
+    console.error("Error removing user", e);
+  }
+}
