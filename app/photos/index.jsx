@@ -1,64 +1,51 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, Button, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect } from "@react-navigation/native";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "../../utils/firebaseConfig";
 
-export default function Index() {
+export default function Photos() {
   const router = useRouter();
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  const loadUser = async () => {
-    try {
-      const savedUser = await AsyncStorage.getItem("user");
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.log("Error loading user:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    loadUser();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+        router.replace("/login");
+      }
+      setLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadUser();
-    }, [])
-  );
-
   const handleLogout = async () => {
-    await AsyncStorage.removeItem("user");
-    setUser(null);
+    await signOut(auth);
     router.replace("/login");
   };
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 items-center justify-center">
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
       {user ? (
         <>
-          <Text className="text-xl font-bold">Welcome, {user.email}!</Text>
-          <Button title="Go to Search" onPress={() => router.push("/search")} />
+          <Text className="text-xl font-bold">Welcome to Photos, {user.email}!</Text>
           <Button title="Logout" onPress={handleLogout} />
         </>
       ) : (
         <>
-          <Text className="text-lg">You are not logged in</Text>
+          <Text>You are not logged in</Text>
           <Button title="Go to Login" onPress={() => router.replace("/login")} />
         </>
       )}
