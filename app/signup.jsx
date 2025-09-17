@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Text, Alert, StyleSheet } from "react-native";
+import { View, TextInput, Button, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { app } from "../utils/firebaseConfig";
@@ -10,21 +10,31 @@ export default function Signup() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSignup = async () => {
+    setErrorMessage("");
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Success", "Account created!");
-      router.replace("/login");
+      router.replace("/login"); // ✅ Redirect to home after signup
     } catch (error) {
-      Alert.alert("Error", error.message);
+      // 🔹 Simplified messages
+      if (error.code === "auth/email-already-in-use") {
+        setErrorMessage("This email is already registered.");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Please enter a valid email address.");
+      } else if (error.code === "auth/weak-password") {
+        setErrorMessage("Password must be at least 6 characters.");
+      } else {
+        setErrorMessage("Something went wrong. Please try again.");
+      }
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Create an Account</Text>
+        <Text style={styles.title}>Create Account</Text>
 
         <TextInput
           style={styles.input}
@@ -44,17 +54,20 @@ export default function Signup() {
           secureTextEntry
         />
 
+        {/* 🔴 Error Message */}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
         <View style={styles.buttonWrapper}>
           <Button title="Sign Up" onPress={handleSignup} />
         </View>
 
         <Text style={styles.orText}>Already have an account?</Text>
-        <View style={styles.buttonWrapper}>
+
+        <View style={styles.smallButtonWrapper}>
           <Button title="Login" onPress={() => router.push("/login")} />
         </View>
 
-        {/* 🔙 Back Button */}
-        <View style={styles.buttonWrapper}>
+        <View style={styles.smallButtonWrapper}>
           <Button title="Back" color="gray" onPress={() => router.replace("/")} />
         </View>
       </View>
@@ -84,7 +97,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: 20,
     textAlign: "center",
     color: "#333",
   },
@@ -93,16 +106,25 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
-    marginBottom: 15,
+    marginBottom: 12,
     fontSize: 16,
   },
   buttonWrapper: {
-    marginVertical: 8,
+    marginVertical: 10,
+  },
+  smallButtonWrapper: {
+    marginVertical: 5,
   },
   orText: {
     textAlign: "center",
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 15,
+    marginBottom: 8,
     color: "#666",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 14,
   },
 });

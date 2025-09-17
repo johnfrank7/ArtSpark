@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Text, Alert, StyleSheet } from "react-native";
+import { View, TextInput, Button, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { app } from "../utils/firebaseConfig";
@@ -10,14 +10,27 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async () => {
+    setErrorMessage("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("Success", "Logged in!");
       router.replace("/");
     } catch (error) {
-      Alert.alert("Error", error.message);
+      // 🔹 Simplify messages
+      if (
+        error.code === "auth/invalid-email" ||
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/wrong-password" ||
+        error.code === "auth/user-not-found"
+      ) {
+        setErrorMessage("Invalid email or password.");
+      } else if (error.code === "auth/too-many-requests") {
+        setErrorMessage("Too many attempts. Try again later.");
+      } else {
+        setErrorMessage("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -44,17 +57,22 @@ export default function Login() {
           secureTextEntry
         />
 
+        {/* 🔴 Error Message */}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
         <View style={styles.buttonWrapper}>
           <Button title="Login" onPress={handleLogin} />
         </View>
 
         <Text style={styles.orText}>Don’t have an account?</Text>
-        <View style={styles.buttonWrapper}>
+
+        {/* Sign Up */}
+        <View style={styles.smallButtonWrapper}>
           <Button title="Sign Up" onPress={() => router.push("/signup")} />
         </View>
 
-        {/* 🔙 Back Button */}
-        <View style={styles.buttonWrapper}>
+        {/* Back */}
+        <View style={styles.smallButtonWrapper}>
           <Button title="Back" color="gray" onPress={() => router.replace("/")} />
         </View>
       </View>
@@ -84,7 +102,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 30,
+    marginBottom: 20,
     textAlign: "center",
     color: "#333",
   },
@@ -93,16 +111,25 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     borderRadius: 8,
     padding: 12,
-    marginBottom: 15,
+    marginBottom: 12,
     fontSize: 16,
   },
   buttonWrapper: {
-    marginVertical: 8,
+    marginVertical: 10, // ✅ tighter spacing
+  },
+  smallButtonWrapper: {
+    marginVertical: 5, // ✅ smaller gaps for SignUp/Back
   },
   orText: {
     textAlign: "center",
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 15,
+    marginBottom: 8,
     color: "#666",
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 14,
   },
 });
