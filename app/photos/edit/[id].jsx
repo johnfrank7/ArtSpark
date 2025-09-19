@@ -113,36 +113,39 @@ export default function EditPhoto() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#f8f9fa' 
+    backgroundColor: '#FFE4B5' 
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    backgroundColor: 'transparent',
+    borderBottomWidth: 0,
+  },
+  backButton: {
+    padding: 12,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  backButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa'
-  },
   backIcon: {
-    fontSize: 20,
-    color: '#495057'
+    fontSize: 22,
+    color: '#8B4513'
   },
   title: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#2c3e50'
+    color: '#8B4513',
+    fontStyle: 'italic',
+    textShadowColor: 'rgba(255,255,255,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   placeholder: {
     width: 36
@@ -174,12 +177,17 @@ const styles = StyleSheet.create({
     color: '#6c757d'
   },
   updateButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    backgroundColor: '#6B8E23',
+    paddingVertical: 16,
+    paddingHorizontal: 28,
+    borderRadius: 25,
     alignItems: 'center',
-    marginTop: 20
+    marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   updateButtonDisabled: {
     backgroundColor: '#6c757d'
@@ -187,7 +195,10 @@ const styles = StyleSheet.create({
   updateButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600'
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   loadingText: {
     fontSize: 16,

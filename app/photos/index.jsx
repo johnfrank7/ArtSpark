@@ -100,7 +100,7 @@ export default function PhotosHome() {
     <View style={styles.container}>
       {/* Header with Profile + Search */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push("/profile")} style={styles.headerButton}>
+        <TouchableOpacity onPress={() => router.push({ pathname: "/profile", params: { email: auth.currentUser?.email } })} style={styles.headerButton}>
           <Text style={styles.headerIcon}>👤</Text>
         </TouchableOpacity>
         <Text style={styles.logo}>ArtSpark✨</Text>
@@ -146,36 +146,39 @@ export default function PhotosHome() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#f8f9fa" 
+    backgroundColor: "#FFE4B5" 
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 20,
     paddingHorizontal: 20,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    backgroundColor: "transparent",
+    borderBottomWidth: 0,
+  },
+  headerButton: {
+    padding: 12,
+    borderRadius: 25,
+    backgroundColor: "rgba(255,255,255,0.9)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  headerButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: "#f8f9fa"
-  },
   headerIcon: { 
-    fontSize: 20, 
-    color: "#495057" 
+    fontSize: 22, 
+    color: "#8B4513" 
   },
   logo: { 
-    fontSize: 24, 
+    fontSize: 28, 
     fontWeight: "bold", 
-    color: "#2c3e50" 
+    color: "#8B4513",
+    fontStyle: "italic",
+    textShadowColor: "rgba(255,255,255,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 
   loadingContainer: {
@@ -285,13 +288,18 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#007AFF",
+    backgroundColor: "#6B8E23",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     flex: 1,
     marginHorizontal: 4,
-    justifyContent: "center"
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   deleteAction: {
     backgroundColor: "#dc3545"
@@ -302,8 +310,11 @@ const styles = StyleSheet.create({
   },
   actionText: { 
     color: "#fff", 
-    fontSize: 12,
-    fontWeight: "600" 
+    fontSize: 11,
+    fontWeight: "600",
+    textShadowColor: "rgba(0,0,0,0.3)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
 
   fab: {

@@ -190,21 +190,24 @@ export default function CreatePhoto() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#f8f9fa" 
+    backgroundColor: "#FFE4B5" 
   },
   header: {
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
     paddingVertical: 24,
     paddingHorizontal: 20,
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef"
+    borderBottomWidth: 0,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 8
+    color: "#8B4513",
+    marginBottom: 8,
+    fontStyle: "italic",
+    textShadowColor: "rgba(255,255,255,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   subtitle: {
     fontSize: 16,
