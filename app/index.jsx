@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, Button, ActivityIndicator, StyleSheet } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "../utils/firebaseConfig"; // adjust path if needed
+import { auth } from "../utils/firebaseConfig"; 
 
 export default function Index() {
   const router = useRouter();
@@ -13,6 +13,8 @@ export default function Index() {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
+        // Redirect to Photos as the home screen after login
+        router.replace("/photos");
       } else {
         setUser(null);
       }
@@ -35,34 +37,21 @@ export default function Index() {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      {user ? (
-        <>
-          <Text style={styles.welcomeText}>Welcome, {user.email}!</Text>
-          <View style={styles.buttonWrapper}>
-            <Button title="Go to Search" onPress={() => router.push("/search")} />
-          </View>
-          <View style={styles.buttonWrapper}>
-            <Button title="Logout" onPress={handleLogout} />
-          </View>
-        </>
-      ) : (
-        <>
-          <Text style={styles.title}>Welcome to ArtSpark!</Text>
-          <Text style={styles.subtitle}>
-            Discover and share creativity with the world.
-          </Text>
-          <View style={styles.buttonWrapper}>
-            <Button
-              title="Get Started"
-              onPress={() => router.push("/login")}
-            />
-          </View>
-        </>
-      )}
-    </View>
-  );
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome to ArtSpark!</Text>
+        <Text style={styles.subtitle}>
+          Discover and share creativity with the world.
+        </Text>
+        <TouchableOpacity style={styles.loginBtn} onPress={() => router.push("/login")}>
+          <Text style={styles.loginBtnText}>Get Started</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return null;
 }
 
 const styles = StyleSheet.create({
@@ -90,14 +79,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 30,
   },
-  welcomeText: {
-    fontSize: 20,
-    fontWeight: "600",
-    marginBottom: 20,
-    color: "#222",
+  loginBtn: {
+    backgroundColor: "#007bff",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 6,
   },
-  buttonWrapper: {
-    width: "60%",
-    marginVertical: 8,
+  loginBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });

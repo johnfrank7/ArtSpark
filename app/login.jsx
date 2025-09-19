@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { View, TextInput, Button, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app } from "../utils/firebaseConfig";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../utils/firebaseConfig"; // ✅ make sure db is exported in firebaseConfig
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Login() {
   const router = useRouter();
-  const auth = getAuth(app);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,10 +15,21 @@ export default function Login() {
   const handleLogin = async () => {
     setErrorMessage("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace("/");
+      // 🔹 Firebase login
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 🔹 Fetch role from Firestore
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // ✅ Redirect to home screen after login
+        router.replace("/");
+      } else {
+        setErrorMessage("User profile not found in database.");
+      }
     } catch (error) {
-      // 🔹 Simplify messages
       if (
         error.code === "auth/invalid-email" ||
         error.code === "auth/invalid-credential" ||
@@ -57,7 +68,6 @@ export default function Login() {
           secureTextEntry
         />
 
-        {/* 🔴 Error Message */}
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
         <View style={styles.buttonWrapper}>
@@ -66,12 +76,10 @@ export default function Login() {
 
         <Text style={styles.orText}>Don’t have an account?</Text>
 
-        {/* Sign Up */}
         <View style={styles.smallButtonWrapper}>
           <Button title="Sign Up" onPress={() => router.push("/signup")} />
         </View>
 
-        {/* Back */}
         <View style={styles.smallButtonWrapper}>
           <Button title="Back" color="gray" onPress={() => router.replace("/")} />
         </View>
@@ -115,10 +123,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   buttonWrapper: {
-    marginVertical: 10, // ✅ tighter spacing
+    marginVertical: 10,
   },
   smallButtonWrapper: {
-    marginVertical: 5, // ✅ smaller gaps for SignUp/Back
+    marginVertical: 5,
   },
   orText: {
     textAlign: "center",

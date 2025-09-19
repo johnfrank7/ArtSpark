@@ -2,14 +2,12 @@ import React, { useState } from "react";
 import { View, TextInput, Button, Text, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useRouter } from "expo-router";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { app } from "../utils/firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../utils/firebaseConfig";
 
 export default function Signup() {
   const router = useRouter();
-  const auth = getAuth(app);
-  const db = getFirestore(app);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

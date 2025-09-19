@@ -9,52 +9,84 @@ import {
   ScrollView,
   Animated,
 } from "react-native";
-import {
-  savePhoto,
-  getUserPhotos,
-  deletePhoto,
-} from "../utils/firestoreHelpers";
+import { useRouter } from "expo-router";
+import { addBookmark, getMyBookmarks, removeBookmark } from "../utils/firestoreHelpers";
 import { UNSPLASH_ACCESS_KEY } from "../utils/unsplashConfig";
 
 export default function SearchScreen() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [savedPhotos, setSavedPhotos] = useState([]);
+  const [error, setError] = useState("");
+  const [bookmarks, setBookmarks] = useState([]);
+  const [activeTab, setActiveTab] = useState("results"); // "results" | "saved"
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [zoomItem, setZoomItem] = useState(null); // { id, url }
+  const [editTitle, setEditTitle] = useState("");
 
   const searchPhotos = async () => {
     if (!query) return;
     setLoading(true);
+    setError("");
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&client_id=${UNSPLASH_ACCESS_KEY}`
-      );
+      const encoded = encodeURIComponent(query.trim());
+      const url = `https://api.unsplash.com/search/photos?query=${encoded}&per_page=30&content_filter=high`;
+      
+      const response = await fetch(url, {
+        headers: {
+          "Accept-Version": "v1",
+          Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Unsplash error: ${response.status}`);
+      }
+      
       const data = await response.json();
-      setResults(data.results || []);
+      const parsed = Array.isArray(data.results) ? data.results : [];
+      
+      if (parsed.length === 0) {
+        // Fallback: show popular photos if no search results
+        const fallbackRes = await fetch(
+          `https://api.unsplash.com/photos?per_page=30&order_by=popular`,
+          { headers: { "Accept-Version": "v1", Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }
+        );
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          setResults(Array.isArray(fallbackData) ? fallbackData.map((p) => ({ id: p.id, urls: p.urls, user: p.user })) : []);
+        } else {
+          setResults([]);
+        }
+      } else {
+        setResults(parsed);
+      }
     } catch (error) {
-      console.error("Error fetching Unsplash images:", error);
+      console.error("Search error:", error);
+      setError(`Search failed: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async (url) => {
-    await savePhoto(url);
-    loadSavedPhotos();
+    await addBookmark(url, "unsplash");
+    loadBookmarks();
   };
 
   const handleDelete = async (id) => {
-    await deletePhoto(id);
-    loadSavedPhotos();
+    await removeBookmark(id);
+    loadBookmarks();
   };
 
-  const loadSavedPhotos = async () => {
-    const photos = await getUserPhotos();
-    setSavedPhotos(photos);
+  const loadBookmarks = async () => {
+    const items = await getMyBookmarks();
+    setBookmarks(items);
   };
 
   useEffect(() => {
-    loadSavedPhotos();
+    loadBookmarks();
   }, []);
 
   // Split results into 2 columns (Pinterest style)
@@ -78,6 +110,7 @@ export default function SearchScreen() {
             activeOpacity={1}
             onPressIn={onPressIn}
             onPressOut={onPressOut}
+            onPress={() => setZoomItem({ id: item.id, url: item.urls.small })}
           >
             <Image source={{ uri: item.urls.small }} style={styles.image} resizeMode="cover" />
           </TouchableOpacity>
@@ -97,75 +130,226 @@ export default function SearchScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Search Photos</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Explore</Text>
+        <View style={styles.placeholder} />
+      </View>
 
       <TextInput
         style={styles.input}
         placeholder="Enter keyword (e.g. nature)"
         value={query}
         onChangeText={setQuery}
+        onFocus={() => setIsInputFocused(true)}
+        onBlur={() => setIsInputFocused(false)}
+        onSubmitEditing={searchPhotos}
+        onKeyPress={(e) => {
+          if (e?.nativeEvent?.key === "Enter") {
+            searchPhotos();
+          }
+        }}
       />
 
-      <TouchableOpacity style={styles.searchButton} onPress={searchPhotos}>
+      <TouchableOpacity 
+        style={[styles.searchButton, { opacity: isInputFocused ? 1 : 0.7 }]} 
+        onPress={searchPhotos}
+        disabled={!query.trim()}
+      >
         <Text style={styles.searchText}>Search</Text>
       </TouchableOpacity>
 
-      {loading ? (
-        <Text style={styles.loading}>Loading...</Text>
-      ) : (
-        <View style={styles.masonryContainer}>
-          <View style={styles.column}>
-            {column1.map((item) => (
-              <ZoomableImage key={item.id} item={item} />
-            ))}
+      {/* Tabs */}
+      <View style={styles.tabsRow}>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === "results" && styles.tabBtnActive]}
+          onPress={() => {
+            setActiveTab("results");
+            if (query) searchPhotos();
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === "results" && styles.tabTextActive]}>Results</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === "saved" && styles.tabBtnActive]}
+          onPress={() => setActiveTab("saved")}
+        >
+          <Text style={[styles.tabText, activeTab === "saved" && styles.tabTextActive]}>Saved</Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === "results" && (
+        loading ? (
+          <Text style={styles.loading}>Loading...</Text>
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : results.length === 0 && query ? (
+          <Text style={styles.emptyText}>No results found</Text>
+        ) : (
+          <View style={styles.masonryContainer}>
+            <View style={styles.column}>
+              {column1.map((item) => (
+                <ZoomableImage key={item.id} item={item} />
+              ))}
+            </View>
+            <View style={styles.column}>
+              {column2.map((item) => (
+                <ZoomableImage key={item.id} item={item} />
+              ))}
+            </View>
           </View>
-          <View style={styles.column}>
-            {column2.map((item) => (
-              <ZoomableImage key={item.id} item={item} />
-            ))}
+        )
+      )}
+
+      {activeTab === "saved" && (
+        <View style={styles.savedContainer}>
+          <View style={styles.savedHeader}>
+            <Text style={styles.savedTitle}>✨ Your Collection</Text>
+            <Text style={styles.savedSubtitle}>{bookmarks.length} saved images</Text>
           </View>
+          
+          {bookmarks.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📸</Text>
+              <Text style={styles.emptyText}>No saved images yet</Text>
+              <Text style={styles.emptySubtext}>Search and save images to build your collection</Text>
+            </View>
+          ) : (
+            <View style={styles.savedGrid}>
+              {bookmarks.map((item) => (
+                <View key={item.id} style={styles.savedCard}>
+                  <TouchableOpacity 
+                    style={styles.savedImageContainer}
+                    onPress={() => setZoomItem(item)}
+                  >
+                    <Image 
+                      source={{ uri: item.url }} 
+                      style={styles.savedImage}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.savedOverlay}>
+                      <Text style={styles.viewIcon}>👁️</Text>
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.savedActions}>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDelete(item.id)}
+                    >
+                      <Text style={styles.deleteIcon}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
-      <Text style={styles.savedTitle}>⭐ Saved Photos</Text>
-      <View style={styles.savedWrapper}>
-        {savedPhotos.map((item) => (
-          <View key={item.id} style={styles.imageWrapper}>
-            <Image source={{ uri: item.url }} style={styles.image} />
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() => handleDelete(item.id)}
-            >
-              <Text style={styles.deleteText}>Delete</Text>
-            </TouchableOpacity>
+      {/* Zoom/Edit Modal */}
+      {zoomItem && (
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Image source={{ uri: zoomItem.url }} style={styles.modalImage} resizeMode="contain" />
+            <TextInput
+              style={styles.input}
+              placeholder="Edit title (optional)"
+              value={editTitle}
+              onChangeText={setEditTitle}
+            />
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <TouchableOpacity style={styles.deleteButton} onPress={() => setZoomItem(null)}>
+                <Text style={styles.deleteText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        ))}
-      </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, backgroundColor: "#fff" },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 12 },
+  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e9ecef",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa"
+  },
+  backIcon: {
+    fontSize: 20,
+    color: "#495057"
+  },
+  title: { 
+    fontSize: 20, 
+    fontWeight: "bold", 
+    color: "#2c3e50" 
+  },
+  placeholder: {
+    width: 36
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
+    borderColor: "#dee2e6",
+    padding: 12,
     borderRadius: 8,
+    margin: 20,
     marginBottom: 10,
+    backgroundColor: "#fff",
+    fontSize: 16
   },
   searchButton: {
-    backgroundColor: "#4CAF50",
-    padding: 10,
+    backgroundColor: "#007AFF",
+    padding: 12,
     borderRadius: 8,
     alignItems: "center",
+    marginHorizontal: 20,
     marginBottom: 20,
   },
   searchText: { color: "white", fontWeight: "bold" },
   loading: { marginTop: 20, textAlign: "center", fontSize: 16 },
 
-  masonryContainer: { flexDirection: "row", justifyContent: "space-between" },
+  tabsRow: { 
+    flexDirection: "row", 
+    marginHorizontal: 20, 
+    marginBottom: 20, 
+    gap: 8 
+  },
+  tabBtn: { 
+    flex: 1,
+    paddingVertical: 12, 
+    paddingHorizontal: 16, 
+    borderRadius: 20, 
+    backgroundColor: "#e9ecef",
+    alignItems: "center"
+  },
+  tabBtnActive: { backgroundColor: "#007AFF" },
+  tabText: { color: "#6c757d", fontWeight: "600" },
+  tabTextActive: { color: "#fff", fontWeight: "600" },
+
+  masonryContainer: { 
+    flexDirection: "row", 
+    justifyContent: "space-between",
+    paddingHorizontal: 20
+  },
   column: { flex: 1, marginHorizontal: 4 },
 
   imageWrapper: { marginBottom: 12, alignItems: "center" },
@@ -192,16 +376,117 @@ const styles = StyleSheet.create({
   },
   downloadIcon: { fontSize: 16 },
 
-  savedTitle: { marginTop: 20, fontWeight: "bold", fontSize: 16 },
-  savedWrapper: { flexDirection: "row", flexWrap: "wrap" },
-
-  deleteButton: {
-    marginTop: 6,
-    padding: 6,
-    borderRadius: 6,
-    backgroundColor: "red",
-    alignItems: "center",
-    width: 100,
+  // Saved Collection Styles
+  savedContainer: { 
+    marginTop: 20,
+    paddingHorizontal: 20
   },
-  deleteText: { color: "white", fontWeight: "bold" },
+  savedHeader: { 
+    marginBottom: 20, 
+    alignItems: "center",
+    paddingVertical: 16,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef"
+  },
+  savedTitle: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    color: "#2c3e50",
+    marginBottom: 4
+  },
+  savedSubtitle: { 
+    fontSize: 14, 
+    color: "#6c757d",
+    fontStyle: "italic"
+  },
+  
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 20
+  },
+  emptyIcon: { fontSize: 48, marginBottom: 16 },
+  emptyText: { 
+    fontSize: 18, 
+    fontWeight: "600", 
+    color: "#6c757d",
+    marginBottom: 8
+  },
+  emptySubtext: { 
+    fontSize: 14, 
+    color: "#adb5bd",
+    textAlign: "center",
+    lineHeight: 20
+  },
+  
+  savedGrid: { 
+    flexDirection: "row", 
+    flexWrap: "wrap", 
+    justifyContent: "space-between",
+    gap: 12
+  },
+  savedCard: {
+    width: "48%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: "hidden",
+    marginBottom: 12
+  },
+  savedImageContainer: {
+    position: "relative",
+    aspectRatio: 1,
+    overflow: "hidden"
+  },
+  savedImage: {
+    width: "100%",
+    height: "100%"
+  },
+  savedOverlay: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 8
+  },
+  viewIcon: { fontSize: 16, color: "#fff" },
+  
+  savedActions: {
+    padding: 12,
+    flexDirection: "row",
+    justifyContent: "center"
+  },
+  deleteButton: {
+    backgroundColor: "#dc3545",
+    borderRadius: 20,
+    padding: 8,
+    minWidth: 40,
+    alignItems: "center"
+  },
+  deleteIcon: { fontSize: 16 },
+
+  modalBackdrop: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+  },
+  modalImage: { width: "100%", height: 300, borderRadius: 8, marginBottom: 10 },
 });
