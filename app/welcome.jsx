@@ -6,7 +6,7 @@ export default function Welcome() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to ArtSpark!</Text>
+      <Text style={styles.title}>Welcome to ArtSpark✨</Text>
       <Text style={styles.subtitle}>
         Discover and share creativity with the world.
       </Text>
