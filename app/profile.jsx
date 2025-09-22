@@ -1,7 +1,8 @@
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from "react-native";
 import { signOut } from "firebase/auth";
-import { auth } from "../utils/firebaseConfig";
+import { auth, db } from "../utils/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 import * as ImagePicker from 'expo-image-picker';
 import { useState, useEffect } from 'react';
 
@@ -10,11 +11,35 @@ export default function Profile() {
   const { email } = useLocalSearchParams();
   const [profileImage, setProfileImage] = useState(null);
   const [userEmail, setUserEmail] = useState('');
+  const [userRole, setUserRole] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Get email from params or current user
     const currentEmail = email || auth.currentUser?.email || 'No email available';
     setUserEmail(currentEmail);
+    
+    // Fetch user role from Firestore
+    const fetchUserRole = async () => {
+      try {
+        if (auth.currentUser) {
+          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserRole(userData.role || 'Artist');
+          } else {
+            setUserRole('Artist'); // Default role
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole('Artist'); // Default fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserRole();
   }, [email]);
 
   const pickImage = async () => {
@@ -50,6 +75,19 @@ export default function Profile() {
     router.replace("/login");
   };
 
+  const getRoleEmoji = (role) => {
+    switch (role) {
+      case 'Artist':
+        return '🎨';
+      case 'Digital Artist':
+        return '💻';
+      case 'Photographer':
+        return '📸';
+      default:
+        return '🎨';
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -73,8 +111,14 @@ export default function Profile() {
         </TouchableOpacity>
         
         <Text style={styles.title}>My Profile</Text>
+        
         <Text style={styles.label}>Email:</Text>
         <Text style={styles.value}>{userEmail}</Text>
+        
+        <Text style={styles.label}>Role:</Text>
+        <Text style={styles.roleValue}>
+          {loading ? 'Loading...' : getRoleEmoji(userRole) + ' ' + userRole}
+        </Text>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
@@ -222,7 +266,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 16,
-    marginBottom: 35,
+    marginBottom: 20,
     color: "#6B8E23",
     textAlign: "center",
     backgroundColor: "rgba(107, 142, 35, 0.15)",
@@ -231,6 +275,18 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(107, 142, 35, 0.4)",
     fontWeight: "600",
+  },
+  roleValue: {
+    fontSize: 18,
+    marginBottom: 35,
+    color: "#8B4513",
+    textAlign: "center",
+    backgroundColor: "rgba(139, 69, 19, 0.15)",
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "rgba(139, 69, 19, 0.4)",
+    fontWeight: "bold",
   },
   buttonContainer: {
     width: "100%",

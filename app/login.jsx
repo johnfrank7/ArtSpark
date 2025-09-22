@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, TextInput, Button, Text, StyleSheet } from "react-native";
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../utils/firebaseConfig"; // ✅ make sure db is exported in firebaseConfig
@@ -48,41 +48,63 @@ export default function Login() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Login to ArtSpark</Text>
+        <Text style={styles.title}>🎨 Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to continue your creative journey</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-        <View style={styles.buttonWrapper}>
-          <Button title="Login" onPress={handleLogin} />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email..."
+            placeholderTextColor="#6c757d"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
         </View>
 
-        <Text style={styles.orText}>Don’t have an account?</Text>
-
-        <View style={styles.smallButtonWrapper}>
-          <Button title="Sign Up" onPress={() => router.push("/signup")} />
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your password..."
+            placeholderTextColor="#6c757d"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
         </View>
 
-        <View style={styles.smallButtonWrapper}>
-          <Button title="Back" color="gray" onPress={() => router.replace("/")} />
+        {errorMessage ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorIcon}>⚠️</Text>
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          </View>
+        ) : null}
+
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <View style={styles.buttonContent}>
+
+            <Text style={styles.buttonText}>Sign In</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
         </View>
+
+        <TouchableOpacity style={styles.signupButton} onPress={() => router.push("/signup")}>
+          <View style={styles.buttonContent}>
+            <Text style={styles.signupButtonText}>Create New Account</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace("/")}>
+          <Text style={styles.backButtonText}>← Back to Home</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -93,51 +115,138 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#FFE4B5",
     padding: 20,
   },
   card: {
     width: "100%",
     maxWidth: 400,
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
+    padding: 24,
+    borderRadius: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 8,
     textAlign: "center",
-    color: "#333",
+    color: "#8B4513",
+    fontStyle: "italic",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#6c757d",
+    textAlign: "center",
+    marginBottom: 24
+  },
+  inputGroup: {
+    marginBottom: 24
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2c3e50",
+    marginBottom: 8
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#e9ecef",
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
+    backgroundColor: "#fff",
+    color: "#2c3e50"
   },
-  buttonWrapper: {
-    marginVertical: 10,
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8d7da",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#f5c6cb"
   },
-  smallButtonWrapper: {
-    marginVertical: 5,
-  },
-  orText: {
-    textAlign: "center",
-    marginTop: 15,
-    marginBottom: 8,
-    color: "#666",
+  errorIcon: {
+    fontSize: 16,
+    marginRight: 8
   },
   errorText: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: 10,
+    color: "#721c24",
     fontSize: 14,
+    flex: 1
   },
+  loginButton: {
+    backgroundColor: "#007bff",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#007bff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 16
+  },
+  signupButton: {
+    backgroundColor: "#28a745",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    shadowColor: "#28a745",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 16
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  buttonIcon: {
+    fontSize: 20,
+    marginRight: 8
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold"
+  },
+  signupButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold"
+  },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#dee2e6"
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: "#6c757d",
+    fontSize: 14,
+    fontWeight: "500"
+  },
+  backButton: {
+    alignItems: "center",
+    paddingVertical: 12
+  },
+  backButtonText: {
+    color: "#6c757d",
+    fontSize: 16,
+    fontWeight: "500"
+  }
 });
