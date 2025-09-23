@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../utils/firebaseConfig";
+import shining from "../assets/images/shining.png";
 
 export default function Signup() {
   const router = useRouter();
