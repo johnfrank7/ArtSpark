@@ -15,6 +15,7 @@ import {
 import { useRouter } from "expo-router";
 import { auth } from "../../utils/firebaseConfig";
 import { subscribeAllPhotos, deletePhoto } from "../../utils/firestoreHelpers";
+import shining from "../../assets/images/shining.png"; 
 
 export default function PhotosHome() {
   const router = useRouter();
@@ -103,7 +104,15 @@ export default function PhotosHome() {
         <TouchableOpacity onPress={() => router.push({ pathname: "/profile", params: { email: auth.currentUser?.email } })} style={styles.headerButton}>
           <Text style={styles.headerIcon}>👤</Text>
         </TouchableOpacity>
-        <Text style={styles.logo}>ArtSpark✨</Text>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={styles.logo}>ArtSpark</Text>
+          <Image 
+            source={shining} 
+            style={{ width: 28, height: 28, marginLeft: 6 }} 
+            resizeMode="contain"
+          />
+        </View>
+        
         <TouchableOpacity onPress={() => router.push("/search")} style={styles.headerButton}>
           <Text style={styles.headerIcon}>🔍</Text>
         </TouchableOpacity>
