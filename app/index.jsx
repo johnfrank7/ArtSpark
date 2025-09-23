@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from "rea
 import { useRouter } from "expo-router";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "../utils/firebaseConfig"; 
+ import shining from "../assets/images/shining.png";
 
 export default function Index() {
   const router = useRouter();
@@ -40,7 +41,11 @@ export default function Index() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>Welcome to ArtSpark!</Text>
+        <Text style={styles.title}>Welcome to ArtSpark<Image 
+              source={shining} 
+              style={{ width: 28, height: 28, marginLeft: 6 }} 
+              resizeMode="contain"
+        /></Text>
         <Text style={styles.subtitle}>
           Discover and share creativity with the world.
         </Text>
